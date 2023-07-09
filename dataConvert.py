@@ -1,11 +1,11 @@
 import glob
 
-# 存放图片的地址
-train_image_path = "F:\\datasets\\pcb-yolo-en-clean-v2\\images\\train\\"
-valid_image_path =  "F:\\datasets\\pcb-yolo-en-clean-v2\\images\\val\\"
-test_image_path =  "F:\\datasets\\pcb-yolo-en-clean-v2\\images\\test\\"
-# 生成的txt的路径
-txt_path = "F:\\datasets\\pcb-yolo-en-clean-v2\\"
+# address where the picture is stored
+train_image_path = "datasets/pcb-yolo-en-clean-v2/images/train"
+valid_image_path =  "datasets/pcb-yolo-en-clean-v2/images/val"
+test_image_path =  "datasets/pcb-yolo-en-clean-v2/images/test"
+# path to the generated txt
+txt_path = "datasets/pcb-yolo-en-clean-v2"
 
 
 def generate_train_and_val(image_path, txt_file):
