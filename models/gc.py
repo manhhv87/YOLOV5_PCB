@@ -16,7 +16,7 @@ def autopad(k, p=None):  # kernel, padding
     return p
 
 
-class Conv(nn.Module):
+class CBS(nn.Module):
     # Standard convolution
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
         super().__init__()
@@ -65,21 +65,24 @@ def last_zero_init(m):
         m.inited = True
 
 
-class CB2d(nn.Module):
+class GC(nn.Module):
     def __init__(self, inplanes, pool='att', fusions=['channel_add', 'channel_mul']):
-        super(CB2d, self).__init__()
+        super(GC, self).__init__()
         assert pool in ['avg', 'att']
         assert all([f in ['channel_add', 'channel_mul'] for f in fusions])
         assert len(fusions) > 0, 'at least one fusion should be used'
+
         self.inplanes = inplanes
         self.planes = inplanes // 4
         self.pool = pool
         self.fusions = fusions
+
         if 'att' in pool:
             self.conv_mask = nn.Conv2d(inplanes, 1, kernel_size=1)
             self.softmax = nn.Softmax(dim=2)
         else:
             self.avg_pool = nn.AdaptiveAvgPool2d(1)
+
         if 'channel_add' in fusions:
             self.channel_add_conv = nn.Sequential(
                 nn.Conv2d(self.inplanes, self.planes, kernel_size=1),
@@ -89,6 +92,7 @@ class CB2d(nn.Module):
             )
         else:
             self.channel_add_conv = None
+
         if 'channel_mul' in fusions:
             self.channel_mul_conv = nn.Sequential(
                 nn.Conv2d(self.inplanes, self.planes, kernel_size=1),
@@ -98,6 +102,7 @@ class CB2d(nn.Module):
             )
         else:
             self.channel_mul_conv = None
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -107,11 +112,13 @@ class CB2d(nn.Module):
 
         if self.channel_add_conv is not None:
             last_zero_init(self.channel_add_conv)
+
         if self.channel_mul_conv is not None:
             last_zero_init(self.channel_mul_conv)
 
     def spatial_pool(self, x):
         batch, channel, height, width = x.size()
+
         if self.pool == 'att':  # iscyy
             input_x = x
             input_x = input_x.view(batch, channel, height * width)
@@ -135,37 +142,38 @@ class CB2d(nn.Module):
             out = x * channel_mul_term
         else:
             out = x
+
         if self.channel_add_conv is not None:
             channel_add_term = self.channel_add_conv(context)
             out = out + channel_add_term
+
         return out
 
 
-class CB2D(nn.Module):
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1,
-                 e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion #iscyy
-
-        super(CB2D, self).__init__()
+class C3GC(nn.Module):
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion #iscyy
+        super(C3GC, self).__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.gc = CB2d(c1)
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = Conv(c1, c_, 1, 1)
-        self.cv3 = Conv(2 * c_, c2, 1)  # act=FReLU(c2)
-        # self.m = nn.Sequential(*[CB2d(c_) for _ in range(n)])
-        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
+        self.gc = GC(c1)
+        self.cv1 = CBS(c1, c_, 1, 1)
+        self.cv2 = CBS(c1, c_, 1, 1)
+        self.cv3 = CBS(2 * c_, c2, 1)  # act=FReLU(c2)
+        # self.m = nn.Sequential(*[GC(c_) for _ in range(n)])
+        self.m = nn.Sequential(*[CSP(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
 
     def forward(self, x):
         out = torch.cat((self.m(self.cv1(x)), self.cv2(self.gc(x))), dim=1)
         out = self.cv3(out)
         return out
 
-class Bottleneck(nn.Module):
+
+class CSP(nn.Module):
     # Standard bottleneck
     def __init__(self, c1, c2, shortcut=True, g=1, e=0.5):  # ch_in, ch_out, shortcut, groups, expansion
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1)
-        self.cv2 = Conv(c_, c2, 3, 1, g=g)
+        self.cv1 = CBS(c1, c_, 1, 1)
+        self.cv2 = CBS(c_, c2, 3, 1, g=g)
         self.add = shortcut and c1 == c2
 
     def forward(self, x):

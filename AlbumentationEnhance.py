@@ -1,12 +1,12 @@
 import albumentations as A
-# 对示例数据集进行增强, 运行成功后会在相应目录下保存
+# Enhance the sample data set, and save it in the corresponding directory after running successfully
 import os
 import json
 import cv2
 import numpy as np
 
 
-# 定义类
+# define class
 class YOLOAug(object):
 
     def __init__(self,
@@ -24,7 +24,7 @@ class YOLOAug(object):
         :param pre_label_path:
         :param aug_save_image_path:
         :param aug_save_label_path:
-        :param labels: 标签列表, 需要根据自己的设定, 用于展示图片
+        :param labels: label list, which needs to be used to display pictures according to your own settings
         :param is_show:
         :param start_filename_id:
         :param max_len:
@@ -37,53 +37,54 @@ class YOLOAug(object):
         self.is_show = is_show
         self.start_filename_id = start_filename_id
         self.max_len = max_len
-        # 数据增强选项
+
+        # Data Augmentation Options
         # self.aug = A.Compose([
         #     A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=1),
         #     A.GaussianBlur(p=0.7),
         #     A.GaussNoise(p=0.7),
-        #     A.CLAHE(clip_limit=2.0, tile_grid_size=(4, 4), p=0.5),  # 直方图均衡
-        #     A.Equalize(p=0.5),  # 均衡图像直方图
-             #A.Cutout(num_holes=8, max_h_size=8, max_w_size=8, fill_value=0, always_apply=False, p=0.5)
+        #     A.CLAHE(clip_limit=2.0, tile_grid_size=(4, 4), p=0.5),  # Histogram equalization
+        #     A.Equalize(p=0.5),  # Equalize image histogram
+        # A.Cutout(num_holes=8, max_h_size=8, max_w_size=8, fill_value=0, always_apply=False, p=0.5)
 
         #     A.OneOf([
         #         # A.RGBShift(r_shift_limit=50, g_shift_limit=50, b_shift_limit=50, p=0.5),
-        #         # A.ChannelShuffle(p=0.3),  # 随机排列通道
-        #         # A.ColorJitter(p=0.3),  # 随机改变图像的亮度、对比度、饱和度、色调
-        #         # A.ChannelDropout(p=0.3),  # 随机丢弃通道
+        #         # A.ChannelShuffle(p=0.3),    # Randomize channels
+        #         # A.ColorJitter(p=0.3),       # Randomly change the brightness, contrast, saturation, hue of an image
+        #         # A.ChannelDropout(p=0.3),    # randomly drop channels
         #     ], p=0.),
-        #     # A.Downscale(p=0.1),  # 随机缩小和放大来降低图像质量
-        #     A.Emboss(p=0.2),  # 压印输入图像并将结果与原始图像叠加
+        #     # A.Downscale(p=0.1),     # Randomly scale down and up to reduce image quality
+        #     A.Emboss(p=0.2),          # Imprints the input image and overlays the result with the original image
         # ],
         self.aug = A.Compose([
-            #A.GaussNoise( p=1.0)
-            #A.VerticalFlip(always_apply=True, p=1.0)
-            #A.HorizontalFlip(always_apply=True, p=1.0)
+            # A.GaussNoise( p=1.0)
+            # A.VerticalFlip(always_apply=True, p=1.0)
+            # A.HorizontalFlip(always_apply=True, p=1.0)
             A.RandomBrightness(limit=0.7, p=1.0),
-            #A.MotionBlur(blur_limit=7, always_apply=True, p=1.0),
-            #A.RandomResizedCrop(1586,3034,(0.6,0.6),p=1.0)
-            #A.ShiftScaleRotate(border_mode=0, value=[255, 255, 255],p=1.0)
-            # 第一次
+            # A.MotionBlur(blur_limit=7, always_apply=True, p=1.0),
+            # A.RandomResizedCrop(1586,3034,(0.6,0.6),p=1.0)
+            # A.ShiftScaleRotate(border_mode=0, value=[255, 255, 255],p=1.0)
+            # first time
             # A.GlassBlur(sigma=0.7, max_delta=4, p=0.3),
             # A.Rotate(limit=89, p=0.8),
 
             # A.ISONoise(color_shift=(0.01,0.05),intensity=(0.5,0.8),always_apply=False,p=1.0),
 
-            # 第二次
-            # A.Downscale(p=0.3),  # 随机缩小和放大来降低图像质量
-            # A.ColorJitter(p=0.5),  # 随机改变图像的亮度、对比度、饱和度、色调
-            # A.ChannelShuffle(p=0.3),  # 随机排列通道
-            #A.Emboss(p=0.2),  # 压印输入图像并将结果与原始图像叠加
-            #A.Equalize(p=0.5),  # 均衡图像直方图
+            # the second time
+            # A.Downscale(p=0.3),       # Randomly scale down and up to reduce image quality
+            # A.ColorJitter(p=0.5),     # Randomly change the brightness, contrast, saturation, hue of an image
+            # A.ChannelShuffle(p=0.3),  # Randomize channels
+            # A.Emboss(p=0.2),          # Imprints the input image and overlays the result with the original image
+            # A.Equalize(p=0.5),        # Equalize image histogram
 
-            #A.RandomSnow(p=1), # 加雪花
-            #A.RandomRain(p=1), # 加雨滴
-            #A.RandomFog(fog_coef_lower=0.3,fog_coef_upper=0.5,p=1), # 加雾
-            #A.RandomSunFlare(flare_roi=(0, 0, 1, 0.5), angle_lower=0.5,p=1), # 加阳光
+            # A.RandomSnow(p=1), # add snowflakes
+            # A.RandomRain(p=1), # add raindrops
+            # A.RandomFog(fog_coef_lower=0.3,fog_coef_upper=0.5,p=1), # Add fog
+            # A.RandomSunFlare(flare_roi=(0, 0, 1, 0.5), angle_lower=0.5,p=1), # add sunshine
         ],
-            # yolo: [x_center, y_center, width, height]  # 经过归一化
-            # min_area: 表示bbox占据的像素总个数, 当数据增强后, 若bbox小于这个值则从返回的bbox列表删除该bbox.
-            # min_visibility: 值域为[0,1], 如果增强后的bbox面积和增强前的bbox面积比值小于该值, 则删除该bbox
+            # yolo: [x_center, y_center, width, height]  # Normalized
+            # min_area: Indicates the total number of pixels occupied by the bbox. When the data is enhanced, if the bbox is smaller than this value, the bbox will be deleted from the returned bbox list.
+            # min_visibility: The value range is [0,1]. If the ratio of the enhanced bbox area to the pre-enhanced bbox area is less than this value, delete the bbox
             A.BboxParams(format='yolo', min_area=0., min_visibility=0., label_fields=['category_id'])
 
         )
@@ -98,9 +99,9 @@ class YOLOAug(object):
 
     def get_data(self, image_name):
         """
-        获取图片和对应的label信息
+        Get pictures and corresponding label information
 
-        :param image_name: 图片文件名, e.g. 0000.jpg
+        :param image_name: Image filename, e.g. 0000.jpg
         :return:
         """
         image = cv2.imread(os.path.join(self.pre_image_path, image_name))
@@ -135,7 +136,7 @@ class YOLOAug(object):
             if aug_anno is None:
                 continue
 
-            # 获取增强后的信息
+            # Get enhanced information
             augmented = self.aug(**aug_anno)  # {'image': , 'bboxes': , 'category_id': }
 
             # aug_image = aug_info['image']
@@ -179,7 +180,7 @@ class YOLOAug(object):
             if self.is_show:
                 cv2.imshow(f'aug_image_{new_image_filename}', aug_image_show)
                 key = cv2.waitKey(0)
-                # 按下s键保存增强，否则取消保存此次增强
+                # Press the s key to save the enhancement, otherwise cancel saving this enhancement
                 if key & 0xff == ord('s'):
                     pass
                 else:
@@ -187,37 +188,36 @@ class YOLOAug(object):
                     continue
                 cv2.destroyWindow(f'aug_image_{new_image_filename}')
 
-            # 保存增强后的信息
+            # Save Enhanced Information
             cv2.imwrite(os.path.join(self.aug_save_image_path, new_image_filename), aug_image)
             with open(os.path.join(self.aug_save_label_path, new_label_filename), 'w', encoding='utf-8') as lf:
                 for cls_id, bbox in zip(aug_category_id, aug_bboxes):
                     lf.write(str(cls_id) + ' ')
                     for i in bbox:
-                        # 保存小数点后六位
+                        # Save to six decimal places
                         lf.write(str(i)[:8] + ' ')
                     lf.write('\n')
 
             file_name_id += 1
 
 
-# 原始图片和label路径
+# Original image and label path
 
-PRE_IMAGE_PATH =  r'C:\Users\xkw\Desktop\pcb-box\test1/'
-PRE_LABEL_PATH =  r'C:\Users\xkw\Desktop\pcb-box\test2/'
+PRE_IMAGE_PATH = r'C:\Users\xkw\Desktop\pcb-box\test1/'
+PRE_LABEL_PATH = r'C:\Users\xkw\Desktop\pcb-box\test2/'
 
-# 增强后的图片和label保存的路径
+# The path to save the enhanced image and label
 AUG_SAVE_IMAGE_PATH = r'C:\Users\xkw\Desktop\pcb-box/'
 AUG_SAVE_LABEL_PATH = r'C:\Users\xkw\Desktop\pcb-box/'
 
-# 类别列表, 需要根据自己的修改
-labels = ['crazing', 'inclusion', 'patches','pitted_surface','rolled-in_scale','scratches']
+# Category list, need to modify according to your own
+labels = ['crazing', 'inclusion', 'patches', 'pitted_surface', 'rolled-in_scale', 'scratches']
 
 
 aug = YOLOAug(pre_image_path=PRE_IMAGE_PATH,
-                pre_label_path=PRE_LABEL_PATH,
-                aug_save_image_path=AUG_SAVE_IMAGE_PATH,
-                aug_save_label_path=AUG_SAVE_LABEL_PATH,
-                labels=labels,
-                is_show=False)
+              pre_label_path=PRE_LABEL_PATH,
+              aug_save_image_path=AUG_SAVE_IMAGE_PATH,
+              aug_save_label_path=AUG_SAVE_LABEL_PATH,
+              labels=labels,
+              is_show=False)
 aug.aug_image()
-

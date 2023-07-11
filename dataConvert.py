@@ -2,8 +2,8 @@ import glob
 
 # address where the picture is stored
 train_image_path = "datasets/pcb-yolo-en-clean-v2/images/train"
-valid_image_path =  "datasets/pcb-yolo-en-clean-v2/images/val"
-test_image_path =  "datasets/pcb-yolo-en-clean-v2/images/test"
+valid_image_path = "datasets/pcb-yolo-en-clean-v2/images/val"
+test_image_path = "datasets/pcb-yolo-en-clean-v2/images/test"
 # path to the generated txt
 txt_path = "datasets/pcb-yolo-en-clean-v2/"
 

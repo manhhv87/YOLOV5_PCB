@@ -44,6 +44,12 @@ TensorFlow.js:
     $ npm start
 """
 
+from utils.torch_utils import select_device, smart_inference_mode
+from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
+                           check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
+from utils.dataloaders import LoadImages
+from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
+from models.experimental import attempt_load
 import argparse
 import contextlib
 import json
@@ -67,12 +73,6 @@ if str(ROOT) not in sys.path:
 if platform.system() != 'Windows':
     ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.experimental import attempt_load
-from models.yolo import ClassificationModel, Detect, DetectionModel, SegmentationModel
-from utils.dataloaders import LoadImages
-from utils.general import (LOGGER, Profile, check_dataset, check_img_size, check_requirements, check_version,
-                           check_yaml, colorstr, file_size, get_default_args, print_args, url2file, yaml_save)
-from utils.torch_utils import select_device, smart_inference_mode
 
 MACOS = platform.system() == 'Darwin'  # macOS environment
 
@@ -632,7 +632,8 @@ def run(
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default=ROOT / 'pcb-en.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5-p2-cb2d-newanc.pt', help='model.pt path(s)')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT /
+                        'yolov5-p2-cb2d-newanc.pt', help='model.pt path(s)')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640, 640], help='image (h, w)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')

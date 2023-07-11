@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 def autopad(k, p=None):  # kernel, padding
     # Pad to 'same'
     if p is None:
@@ -22,25 +23,28 @@ class Conv(nn.Module):
     def forward_fuse(self, x):
         return self.act(self.conv(x))
 
+
 class ConvMix(nn.Module):
-    def __init__(self, dim, dim1, kernel_size=9):
+    def __init__(self, dim, kernel_size=9):
         super().__init__()
-        self.Resnet =  nn.Sequential(
-            nn.Conv2d(dim,dim, kernel_size=kernel_size, groups=dim, padding='same'),
+        self.Resnet = nn.Sequential(
+            nn.Conv2d(dim, dim, kernel_size=kernel_size, groups=dim, padding='same'),
             nn.GELU(),
             nn.BatchNorm2d(dim)
         )
         self.Conv_1x1 = nn.Sequential(
-            nn.Conv2d(dim,dim,kernel_size=1),
+            nn.Conv2d(dim, dim, kernel_size=1),
             nn.GELU(),
             nn.BatchNorm2d(dim)
         )
-    def forward(self,x):
-        x = x +self.Resnet(x)
+
+    def forward(self, x):
+        x = x + self.Resnet(x)
         x = self.Conv_1x1(x)
         return x
 
-class CSPCM(nn.Module):
+
+class C3CM(nn.Module):
     #
     def __init__(self, c1, c2, n=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
         super().__init__()

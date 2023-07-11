@@ -31,8 +31,8 @@ from utils.general import (LOGGER, ROOT, Profile, check_requirements, check_suff
                            xyxy2xywh, yaml_load)
 from utils.plots import Annotator, colors, save_one_box
 from utils.torch_utils import copy_attr, smart_inference_mode
-from models.gc import CB2D
-from models.cspcm import ConvMix, CSPCM
+from models.gc import C3GC
+from models.cspcm import ConvMix, C3CM
 
 
 def autopad(k, p=None, d=1):  # kernel, padding, dilation
