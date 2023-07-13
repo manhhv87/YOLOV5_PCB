@@ -11,6 +11,7 @@ anchors:
 # YOLOv5 v6.0 backbone
 backbone:
   # [from, number, module, args]
+<<<<<<< HEAD
   [[-1, 1, Conv, [64, 6, 2, 2]],  # 0-P1/2   (64 -> output channel, 6 -> kernel size, 2 -> stride, 2 -> padding)
    [-1, 1, Conv, [128, 3, 2]],    # 1-P2/4  (128 -> output channel, 3 -> kernel size, 2 -> stride, zero padding)
    [-1, 3, C3GC, [128]],
@@ -21,6 +22,18 @@ backbone:
    [-1, 1, Conv, [1024, 3, 2]],   # 7-P5/32
    [-1, 3, C3GC, [1024]],
    [-1, 1, SPPF, [1024, 5]],      # 9
+=======
+  [[-1, 1, Conv, [64, 6, 2, 2]],  # 0-P1/2 (64 -> output channel, 6 -> kernel size, 2 -> stride, 2 -> padding)
+   [-1, 1, Conv, [128, 3, 2]],  # 1-P2/4  (128 -> output channel, 3 -> kernel size, 2 -> stride, zero padding)
+   [-1, 3, C3GC, [128]],
+   [-1, 1, Conv, [256, 3, 2]],  # 3-P3/8
+   [-1, 6, C3GC, [256]],
+   [-1, 1, Conv, [512, 3, 2]],  # 5-P4/16
+   [-1, 9, C3GC, [512]],
+   [-1, 1, Conv, [1024, 3, 2]],  # 7-P5/32
+   [-1, 3, C3GC, [1024]],
+   [-1, 1, SPPF, [1024, 5]],  # 9
+>>>>>>> ee0063996ef47e317734ee82168d6c0a11932b8c
   ]
 
 # YOLOv5 v6.0 head
@@ -37,12 +50,18 @@ head:
    
    [ -1, 1, Conv, [ 128, 1, 1 ] ],
    [ -1, 1, nn.Upsample, [ None, 2, 'nearest' ] ],
+<<<<<<< HEAD
    [ [ -1, 2 ], 1, Concat, [ 1 ] ],    # cat backbone P2
    [ -1, 3, C3CM, [128] ],             #  (P2/4-xsmall) 21
+=======
+   [ [ -1, 2 ], 1, Concat, [ 1 ] ],  # cat backbone P2
+   [ -1, 3, C3CM, [128] ],  #  (P2/4-xsmall) 21
+>>>>>>> ee0063996ef47e317734ee82168d6c0a11932b8c
    
 
    [ -1, 1, Conv, [ 128, 3, 2 ] ],     #22
    [ [ -1, 18,4], 1, Concat, [ 1 ] ],  # cat head P3 
+<<<<<<< HEAD
    [ -1, 3, C3CM, [256] ],             # (P3/8-small) #24
  
 
@@ -54,6 +73,19 @@ head:
    [-1, 1, Conv, [512, 3, 2]],
    [[-1, 10], 1, Concat, [1]],         # cat head P5 
    [-1, 3, C3CM, [1024]],              # (P5/32-large) 30
+=======
+   [ -1, 3, C3CM, [256] ],  # (P3/8-small) #24
+ 
+
+   [-1, 1, Conv, [256, 3, 2]],
+   [[-1, 14,6], 1, Concat, [1]],  # cat head P4
+   [-1, 3, C3CM, [512]],  #  (P4/16-medium)  #27
+  
+
+   [-1, 1, Conv, [512, 3, 2]],
+   [[-1, 10], 1, Concat, [1]],  # cat head P5 
+   [-1, 3, C3CM, [1024]],  #  (P5/32-large) 30
+>>>>>>> ee0063996ef47e317734ee82168d6c0a11932b8c
    
 
    [[21, 24, 27, 30], 1, Detect, [nc,anchors]],  # Detect(P2, P3, P4, P5)

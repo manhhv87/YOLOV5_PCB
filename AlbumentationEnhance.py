@@ -64,6 +64,7 @@ class YOLOAug(object):
             # A.MotionBlur(blur_limit=7, always_apply=True, p=1.0),
             # A.RandomResizedCrop(1586,3034,(0.6,0.6),p=1.0)
             # A.ShiftScaleRotate(border_mode=0, value=[255, 255, 255],p=1.0)
+
             # first time
             # A.GlassBlur(sigma=0.7, max_delta=4, p=0.3),
             # A.Rotate(limit=89, p=0.8),
@@ -121,20 +122,21 @@ class YOLOAug(object):
         cls_id_list = []
         for label in label_txt:
             label_info = label.strip().split(' ')
-            cls_id_list.append(int(label_info[0]))
-            label_list.append([float(x) for x in label_info[1:]])
+            cls_id_list.append(int(label_info[0]))                  # return class id
+            label_list.append([float(x) for x in label_info[1:]])   # retrun list posistions of bouding box
 
         anno_info = {'image': image, 'bboxes': label_list, 'category_id': cls_id_list}
         return anno_info
 
     def aug_image(self):
         image_list = os.listdir(self.pre_image_path)
-
         file_name_id = self.start_filename_id
+
         for image_filename in image_list[:]:
-            image_suffix = image_filename.split('.')[-1]
+            image_suffix = image_filename.split('.')[-1]            
             if image_suffix not in ['jpg', 'png']:
                 continue
+
             image_suffix = image_filename.split('.')[-1]
 
             aug_anno = self.get_data(image_filename)
@@ -185,6 +187,7 @@ class YOLOAug(object):
             if self.is_show:
                 cv2.imshow(f'aug_image_{new_image_filename}', aug_image_show)
                 key = cv2.waitKey(0)
+                
                 # Press the s key to save the enhancement, otherwise cancel saving this enhancement
                 if key & 0xff == ord('s'):
                     pass
