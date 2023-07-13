@@ -157,8 +157,7 @@ class C3GC(nn.Module):
         self.gc = GC(c1)
         self.cv1 = CBS(c1, c_, 1, 1)
         self.cv2 = CBS(c1, c_, 1, 1)
-        self.cv3 = CBS(2 * c_, c2, 1)  # act=FReLU(c2)
-        # self.m = nn.Sequential(*[GC(c_) for _ in range(n)])
+        self.cv3 = CBS(2 * c_, c2, 1)
         self.m = nn.Sequential(*[CSP(c_, c_, shortcut, g, e=1.0) for _ in range(n)])
 
     def forward(self, x):

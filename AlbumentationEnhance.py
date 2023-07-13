@@ -83,13 +83,18 @@ class YOLOAug(object):
             # A.RandomSunFlare(flare_roi=(0, 0, 1, 0.5), angle_lower=0.5,p=1), # add sunshine
         ],
             # yolo: [x_center, y_center, width, height]  # Normalized
-            # min_area: Indicates the total number of pixels occupied by the bbox. When the data is enhanced, if the bbox is smaller than this value, the bbox will be deleted from the returned bbox list.
-            # min_visibility: The value range is [0,1]. If the ratio of the enhanced bbox area to the pre-enhanced bbox area is less than this value, delete the bbox
+            # min_area: Indicates the total number of pixels occupied by the bbox. 
+            #           When the data is enhanced, if the bbox is smaller than this value, 
+            #           the bbox will be deleted from the returned bbox list.
+            # min_visibility: The value range is [0,1]. If the ratio of the enhanced bbox area 
+            #                 to the pre-enhanced bbox area is less than this value, delete the bbox
             A.BboxParams(format='yolo', min_area=0., min_visibility=0., label_fields=['category_id'])
 
         )
+
         print("--------*--------")
         image_len = len(os.listdir(self.pre_image_path))
+        
         print("the length of images: ", image_len)
         if self.start_filename_id is None:
             print("the start_filename id is not set, default: len(image)", image_len)
@@ -202,7 +207,6 @@ class YOLOAug(object):
 
 
 # Original image and label path
-
 PRE_IMAGE_PATH = r'C:\Users\xkw\Desktop\pcb-box\test1/'
 PRE_LABEL_PATH = r'C:\Users\xkw\Desktop\pcb-box\test2/'
 

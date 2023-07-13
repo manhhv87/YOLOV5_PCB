@@ -396,17 +396,17 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             if m in {BottleneckCSP, C3, C3TR, C3Ghost, C3x}:
                 args.insert(2, n)  # number of repeats
                 n = 1
-        elif m in [CB2D]:
+        elif m in [C3GC]:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
 
             args = [c1, c2, *args[1:]]
-            if m in [CB2D]:
+            if m in [C3GC]:
                 args.insert(2, n)  # number of repeats
                 n = 1
        
-        elif m in [ConvMix, CSPCM]:
+        elif m in [ConvMix, C3CM]:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not outputss
                 c2 = make_divisible(c2 * gw, 8)

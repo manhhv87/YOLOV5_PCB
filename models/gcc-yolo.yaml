@@ -11,50 +11,96 @@ anchors:
 # YOLOv5 v6.0 backbone
 backbone:
   # [from, number, module, args]
-  [[-1, 1, Conv, [64, 6, 2, 2]],  # 0-P1/2
-   [-1, 1, Conv, [128, 3, 2]],  # 1-P2/4
-   [-1, 3, CB2D, [128]],
-   [-1, 1, Conv, [256, 3, 2]],  # 3-P3/8
-   [-1, 6, CB2D, [256]],
-   [-1, 1, Conv, [512, 3, 2]],  # 5-P4/16
-   [-1, 9, CB2D, [512]],
-   [-1, 1, Conv, [1024, 3, 2]],  # 7-P5/32
-   [-1, 3, CB2D, [1024]],
-   [-1, 1, SPPF, [1024, 5]],  # 9
+  [[-1, 1, Conv, [64, 6, 2, 2]],  # 0-P1/2   (64 -> output channel, 6 -> kernel size, 2 -> stride, 2 -> padding)
+   [-1, 1, Conv, [128, 3, 2]],    # 1-P2/4  (128 -> output channel, 3 -> kernel size, 2 -> stride, zero padding)
+   [-1, 3, C3GC, [128]],
+   [-1, 1, Conv, [256, 3, 2]],    # 3-P3/8
+   [-1, 6, C3GC, [256]],
+   [-1, 1, Conv, [512, 3, 2]],    # 5-P4/16
+   [-1, 9, C3GC, [512]],
+   [-1, 1, Conv, [1024, 3, 2]],   # 7-P5/32
+   [-1, 3, C3GC, [1024]],
+   [-1, 1, SPPF, [1024, 5]],      # 9
   ]
 
 # YOLOv5 v6.0 head
 head:
   [[-1, 1, Conv, [512, 1, 1]],
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
-   [[-1, 6], 1, Concat, [1]],  # cat backbone P4
-   [-1, 3, C3, [512, False]],  # 13
+   [[-1, 6], 1, Concat, [1]],         # cat backbone P4
+   [-1, 3, C3, [512, False]],         # 13
 
    [-1, 1, Conv, [256, 1, 1]],
    [-1, 1, nn.Upsample, [None, 2, 'nearest']],
-   [[-1, 4], 1, Concat, [1]],  # cat backbone P3
-   [-1, 3, C3, [256, False]],  # 17 (P3/8-small)
+   [[-1, 4], 1, Concat, [1]],          # cat backbone P3
+   [-1, 3, C3, [256, False]],          # 17 (P3/8-small)
    
    [ -1, 1, Conv, [ 128, 1, 1 ] ],
    [ -1, 1, nn.Upsample, [ None, 2, 'nearest' ] ],
-   [ [ -1, 2 ], 1, Concat, [ 1 ] ],  # cat backbone P2
-   [ -1, 3, CSPCM, [128] ],  #  (P2/4-xsmall) 21
+   [ [ -1, 2 ], 1, Concat, [ 1 ] ],    # cat backbone P2
+   [ -1, 3, C3CM, [128] ],             #  (P2/4-xsmall) 21
    
 
-   [ -1, 1, Conv, [ 128, 3, 2 ] ], #22
+   [ -1, 1, Conv, [ 128, 3, 2 ] ],     #22
    [ [ -1, 18,4], 1, Concat, [ 1 ] ],  # cat head P3 
-   [ -1, 3, CSPCM, [256] ],  # (P3/8-small) #24
+   [ -1, 3, C3CM, [256] ],             # (P3/8-small) #24
  
 
    [-1, 1, Conv, [256, 3, 2]],
-   [[-1, 14,6], 1, Concat, [1]],  # cat head P4
-   [-1, 3, CSPCM, [512]],  #  (P4/16-medium)  #27
+   [[-1, 14,6], 1, Concat, [1]],       # cat head P4
+   [-1, 3, C3CM, [512]],               # (P4/16-medium)  #27
   
 
    [-1, 1, Conv, [512, 3, 2]],
-   [[-1, 10], 1, Concat, [1]],  # cat head P5 
-   [-1, 3, CSPCM, [1024]],  #  (P5/32-large) 30
+   [[-1, 10], 1, Concat, [1]],         # cat head P5 
+   [-1, 3, C3CM, [1024]],              # (P5/32-large) 30
    
 
    [[21, 24, 27, 30], 1, Detect, [nc,anchors]],  # Detect(P2, P3, P4, P5)
   ]
+
+
+#                  from  n    params  module                                  arguments                     
+#   0                -1  1      3520  models.common.Conv                      [3, 32, 6, 2, 2]              
+#   1                -1  1     18560  models.common.Conv                      [32, 64, 3, 2]                
+#   2                -1  1     23201  models.gc.C3GC                          [64, 64, 1]                   
+#   3                -1  1     73984  models.common.Conv                      [64, 128, 3, 2]               
+#   4                -1  2    132673  models.gc.C3GC                          [128, 128, 2]                 
+#   5                -1  1    295424  models.common.Conv                      [128, 256, 3, 2]              
+#   6                -1  3    691841  models.gc.C3GC                          [256, 256, 3]                 
+#   7                -1  1   1180672  models.common.Conv                      [256, 512, 3, 2]              
+#   8                -1  1   1447169  models.gc.C3GC                          [512, 512, 1]                 
+#   9                -1  1    656896  models.common.SPPF                      [512, 512, 5]                 
+#  10                -1  1    131584  models.common.Conv                      [512, 256, 1, 1]              
+#  11                -1  1         0  torch.nn.modules.upsampling.Upsample    [None, 2, 'nearest']          
+#  12           [-1, 6]  1         0  models.common.Concat                    [1]                           
+#  13                -1  1    361984  models.common.C3                        [512, 256, 1, False]          
+#  14                -1  1     33024  models.common.Conv                      [256, 128, 1, 1]              
+#  15                -1  1         0  torch.nn.modules.upsampling.Upsample    [None, 2, 'nearest']          
+#  16           [-1, 4]  1         0  models.common.Concat                    [1]                           
+#  17                -1  1     90880  models.common.C3                        [256, 128, 1, False]          
+#  18                -1  1      8320  models.common.Conv                      [128, 64, 1, 1]               
+#  19                -1  1         0  torch.nn.modules.upsampling.Upsample    [None, 2, 'nearest']          
+#  20           [-1, 2]  1         0  models.common.Concat                    [1]                           
+#  21                -1  1     46528  models.cspcm.C3CM                       [128, 64]                     
+#  22                -1  1     36992  models.common.Conv                      [64, 64, 3, 2]                
+#  23       [-1, 18, 4]  1         0  models.common.Concat                    [1]                           
+#  24                -1  1    316288  models.cspcm.C3CM                       [256, 128]                    
+#  25                -1  1    147712  models.common.Conv                      [128, 128, 3, 2]              
+#  26       [-1, 14, 6]  1         0  models.common.Concat                    [1]                           
+#  27                -1  1   2311936  models.cspcm.C3CM                       [512, 256]                    
+#  28                -1  1    590336  models.common.Conv                      [256, 256, 3, 2]              
+#  29          [-1, 10]  1         0  models.common.Concat                    [1]                           
+#  30                -1  1  17370624  models.cspcm.C3CM                       [512, 512]                    
+#  31  [21, 24, 27, 30]  1     42416  models.yolo.Detect                      [6, [[3, 4, 4, 9, 7, 6, 7, 13], [13, 7, 12, 12, 10, 19, 22, 11], [19, 17, 16, 26, 33, 18, 28, 32], [47, 28, 40, 58, 86, 53, 97, 126]], [64, 128, 256, 512]]
+
+# from -1: Indicates the previous layer (located at the end of the ch array) x: Indicates the number of output channels of the x+1th layer
+# 1. from column parameters: -1 represents the input obtained from the previous layer, 
+#                            -2 represents the input obtained from the previous two layers (head is the same).
+# 2. number column parameters: 1 means only one, 3 means there are three identical modules.
+# 3. [64, 6, 2, 2] is parsed to get [3, 32, 6, 2, 2], the input is 3 (RGB), the output is 32, the convolution kernel k is 6, the stride s is 2, and the padding is 2;
+# 4. [128, 3, 2] - This is fixed, 128 indicates the number of output 128 convolution kernels. 
+#    According to the analysis of [128, 3, 2], [32, 64, 3, 2] is obtained, 32 is the input, 64 is the output (128*0.5=64), 
+#    3 means the convolution kernel of 3×3, and 2 means the stride s is 2.
+# 5. The backbone network is that the picture is from large to small, and the depth is continuously deepened.
+# 6. The input of args here is omitted, because the input is the output of the upper layer. 
