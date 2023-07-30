@@ -1,0 +1,7 @@
+path: dataset/
+train: train/images/
+val: valid/images/
+test: test/images/
+
+nc: 4
+names: ['bicycle', 'car', 'dog', 'person']
