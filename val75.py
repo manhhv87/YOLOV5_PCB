@@ -1,4 +1,4 @@
-# YOLOv5 🚀 by Ultralytics, AGPL-3.0 license
+# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 """
 Validate a trained YOLOv5 detection model on a detection dataset
 
@@ -19,6 +19,15 @@ Usage - formats:
                               yolov5s_paddle_model       # PaddlePaddle
 """
 
+from utils.torch_utils import select_device, smart_inference_mode
+from utils.plots import output_to_target, plot_images, plot_val_study
+from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
+from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size, check_requirements,
+                           check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
+                           print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
+from utils.dataloaders import create_dataloader
+from utils.callbacks import Callbacks
+from models.common import DetectMultiBackend
 import argparse
 import json
 import os
@@ -35,16 +44,6 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
-from models.common import DetectMultiBackend
-from utils.callbacks import Callbacks
-from utils.dataloaders import create_dataloader
-from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, check_img_size, check_requirements,
-                           check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
-                           print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
-from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
-from utils.plots import output_to_target, plot_images, plot_val_study
-from utils.torch_utils import select_device, smart_inference_mode
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -188,8 +187,10 @@ def run(
     if isinstance(names, (list, tuple)):  # old format
         names = dict(enumerate(names))
     class_map = coco80_to_coco91_class() if is_coco else list(range(1000))
-    s = ('%22s' + '%11s' * 6) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95')
-    tp, fp, p, r, f1, mp, mr, map50, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    # s = ('%22s' + '%11s' * 6) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP50-95')
+    # tp, fp, p, r, f1, mp, mr, map50, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    s = ('%22s' + '%11s' * 7) % ('Class', 'Images', 'Instances', 'P', 'R', 'mAP50', 'mAP75', 'mAP50-95')
+    tp, fp, p, r, f1, mp, mr, map50, map75, ap50, map = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     dt = Profile(), Profile(), Profile()  # profiling times
     loss = torch.zeros(3, device=device)
     jdict, stats, ap, ap_class = [], [], [], []
@@ -274,20 +275,26 @@ def run(
     stats = [torch.cat(x, 0).cpu().numpy() for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
         tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
-        ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
-        mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+        # ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
+        # mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
+        ap50, ap75, ap = ap[:, 0], ap[:, 5], ap.mean(1)  # AP@0.5, AP@0.75, AP@0.5:0.95
+        mp, mr, map50, map75, map = p.mean(), r.mean(), ap50.mean(), ap75.mean(), ap.mean()
     nt = np.bincount(stats[3].astype(int), minlength=nc)  # number of targets per class
 
     # Print results
-    pf = '%22s' + '%11i' * 2 + '%11.3g' * 4  # print format
-    LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    # pf = '%22s' + '%11i' * 2 + '%11.3g' * 4  # print format
+    # LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map))
+    pf = '%22s' + '%11i' * 2 + '%11.3g' * 5  # print format
+    LOGGER.info(pf % ('all', seen, nt.sum(), mp, mr, map50, map75, map))
+
     if nt.sum() == 0:
         LOGGER.warning(f'WARNING ⚠️ no labels found in {task} set, can not compute metrics without labels')
 
     # Print results per class
     if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            # LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap75[i], ap[i]))
 
     # Print speeds
     t = tuple(x.t / seen * 1E3 for x in dt)  # speeds per image
@@ -298,14 +305,13 @@ def run(
     # Plots
     if plots:
         confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
+        # callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap_class, confusion_matrix)
+        callbacks.run('on_val_end', nt, tp, fp, p, r, f1, ap, ap50, ap75, ap_class, confusion_matrix)
 
     # Save JSON
     if save_json and len(jdict):
         w = Path(weights[0] if isinstance(weights, list) else weights).stem if weights is not None else ''  # weights
         anno_json = str(Path('../datasets/coco/annotations/instances_val2017.json'))  # annotations
-        if not os.path.exists(anno_json):
-            anno_json = os.path.join(data['path'], 'annotations', 'instances_val2017.json')
         pred_json = str(save_dir / f'{w}_predictions.json')  # predictions
         LOGGER.info(f'\nEvaluating pycocotools mAP... saving {pred_json}...')
         with open(pred_json, 'w') as f:
@@ -324,7 +330,8 @@ def run(
             eval.evaluate()
             eval.accumulate()
             eval.summarize()
-            map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
+            # map, map50 = eval.stats[:2]  # update results (mAP@0.5:0.95, mAP@0.5)
+            map, map50, map75 = eval.stats[:3]  # update results (mAP@0.5:0.95, mAP@0.5)
         except Exception as e:
             LOGGER.info(f'pycocotools unable to run: {e}')
 
@@ -336,19 +343,21 @@ def run(
     maps = np.zeros(nc) + map
     for i, c in enumerate(ap_class):
         maps[c] = ap[i]
-    return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+    # return (mp, mr, map50, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
+    return (mp, mr, map50, map75, map, *(loss.cpu() / len(dataloader)).tolist()), maps, t
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
-    parser.add_argument('--batch-size', type=int, default=32, help='batch size')
+    parser.add_argument('--data', type=str, default=ROOT / 'pcb-en.yaml', help='dataset.yaml path')
+    parser.add_argument('--weights', nargs='+', type=str, default=ROOT /
+                        'yolov5-p2-cb2d-newanc.pt', help='model path(s)')
+    parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.6, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=300, help='maximum detections per image')
-    parser.add_argument('--task', default='val', help='train, val, test, speed or study')
+    parser.add_argument('--task', default='test', help='train, val, test, speed or study')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--workers', type=int, default=8, help='max dataloader workers (per RANK in DDP mode)')
     parser.add_argument('--single-cls', action='store_true', help='treat as single-class dataset')
@@ -372,7 +381,7 @@ def parse_opt():
 
 
 def main(opt):
-    check_requirements(ROOT / 'requirements.txt', exclude=('tensorboard', 'thop'))
+    check_requirements(exclude=('tensorboard', 'thop'))
 
     if opt.task in ('train', 'val', 'test'):  # run normally
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
